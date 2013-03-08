@@ -6,11 +6,15 @@ Replace this with more appropriate tests for your application.
 """
 
 from django.test import TestCase
+from random import randint, choice
+from obfuscate import obfuscate, deobfuscate
 
-
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class CipherTest(TestCase):
+    def test_ciphers(self):
+        for i in range(10000):
+            str = "".join(list([choice(list(map(chr, range(0,255)))) for _ in range(randint(0,3000))]))
+            try:
+                if str != deobfuscate(obfuscate(str)):
+                    print "FAILED: %s\n\n\n" % str
+            except:
+                print "EXCEPTION: %s" % str

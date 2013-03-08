@@ -4,8 +4,13 @@ import os, tempfile, subprocess
 from django.conf import settings
 
 def setup_texpath():
-    if not settings.GAMETEX_PROJECT_ROOT in os.environ['TEXINPUTS']:
-        os.environ['TEXINPUTS'] = "%s/LaTeX/:%s" % (settings.GAMETEX_PROJECT_ROOT, os.environ['TEXINPUTS'])
+    if 'TEXINPUTS' in os.environ:
+        if not settings.GAMETEX_PROJECT_ROOT in os.environ['TEXINPUTS']:
+            os.environ['TEXINPUTS'] = "%s/LaTeX/:%s" % (settings.GAMETEX_PROJECT_ROOT, os.environ['TEXINPUTS'])
+    else:
+        os.environ['TEXINPUTS'] = "%s/LaTeX/:" % (settings.GAMETEX_PROJECT_ROOT)
+    os.environ[settings.GAMETEX_NAME] = settings.GAMETEX_PROJECT_ROOT
+
 
 def pdflatex(entities, gametexclass, owner=None, target_dir=None):
     """
@@ -41,8 +46,8 @@ def pdflatex(entities, gametexclass, owner=None, target_dir=None):
         tpf = os.fdopen(tempf[0], 'w')
         tpf.write(template)
         tpf.close()
-
-        result = subprocess.check_output("pdflatex -halt-on-error %s" % tempf[1], shell=True)
+        print template
+        result = subprocess.check_output("%s -halt-on-error -interaction=batchmode %s" % (settings.PDFLATEX_PATH, tempf[1]), shell=True)
         src = tempf[1].replace('.tex', '.pdf')
         tgt = ""
         if target_dir:
@@ -55,12 +60,13 @@ def pdflatex(entities, gametexclass, owner=None, target_dir=None):
         else:
             return src
     except subprocess.CalledProcessError as e:
-        mail_admins("%s LaTeX Failure" % settings.GAMETEX_NAME, """
-        Entities: %s
-        GTClass: %s
-        Owner: %s
-        Output:
-        %s
-        """ % ("\n".join(entities), gametexclass, owner, e.output),
-            fail_silently=True)
+        print e.output
+        # mail_admins("%s LaTeX Failure" % settings.GAMETEX_NAME, """
+        # Entities: %s
+        # GTClass: %s
+        # Owner: %s
+        # Output:
+        # %s
+        # """ % ("\n".join(entities), gametexclass, owner, e.output),
+        #     fail_silently=True)
         return None
